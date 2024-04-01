@@ -1,24 +1,120 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication;
+  describe('orders', () => {
+    it('/ (POST) 201', async () => {
+      const body = {
+        hotel_id: 'reddison',
+        room_id: 'lux',
+        email: 'guest@mail.ru',
+        from: '2024-01-02T00:00:00Z',
+        to: '2024-01-04T00:00:00Z',
+      };
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+      const response = {
+        hotel_id: 'reddison',
+        room_id: 'lux',
+        user_email: 'guest@mail.ru',
+        from: '2024-01-02T00:00:00.000Z',
+        to: '2024-01-04T00:00:00.000Z',
+      };
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
-  });
+      const res = await request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(201);
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+      expect(res.body).toEqual(response);
+    });
+
+    it('/ (POST) 400 (bad hotel_id)', async () => {
+      const body = {
+        hotel_id: 'reddisson',
+        room_id: 'lux',
+        email: 'guest@mail.ru',
+        from: '2024-01-02T00:00:00Z',
+        to: '2024-01-04T00:00:00Z',
+      };
+
+      request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(400);
+    });
+
+    it('/ (POST) 400 (bad room_id)', async () => {
+      const body = {
+        hotel_id: 'reddison',
+        room_id: 'mux',
+        email: 'guest@mail.ru',
+        from: '2024-01-02T00:00:00Z',
+        to: '2024-01-04T00:00:00Z',
+      };
+
+      request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(400);
+    });
+
+    it('/ (POST) 400 (bad email)', async () => {
+      const body = {
+        hotel_id: 'reddison',
+        room_id: 'lux',
+        email: 'guest',
+        from: '2024-01-02T00:00:00Z',
+        to: '2024-01-04T00:00:00Z',
+      };
+
+      request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(400);
+    });
+
+    it('/ (POST) 400 (bad from)', async () => {
+      const body = {
+        hotel_id: 'reddison',
+        room_id: 'lux',
+        email: 'guest@mail.ru',
+        from: '2024',
+        to: '2024-01-04T00:00:00Z',
+      };
+
+      request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(400);
+    });
+
+    it('/ (POST) 400 (bad to)', async () => {
+      const body = {
+        hotel_id: 'reddison',
+        room_id: 'lux',
+        email: 'guest@mail.ru',
+        from: '2024-01-04T00:00:00Z',
+        to: '2024',
+      };
+
+      request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(400);
+    });
+
+    it('/ (POST) 409 (unavailable dates)', async () => {
+      const body = {
+        hotel_id: 'reddison',
+        room_id: 'lux',
+        email: 'guest@mail.ru',
+        from: '2025-01-02T00:00:00Z',
+        to: '2025-01-04T00:00:00Z',
+      };
+
+      request(global.__APP.getHttpServer())
+        .post('/orders')
+        .send(body)
+        .expect(409);
+    });
   });
 });
